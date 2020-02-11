@@ -1,0 +1,85 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn import tree #for decision tree model
+from sklearn.neighbors import KNeighborsClassifier#KNN Model
+from sklearn import metrics
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
+
+
+iris=datasets.load_iris()
+print(iris)
+
+
+#Creating the Hold Out Environment
+iris_train, iris_test, iristarget_train, iristarget_test=train_test_split(iris.data, iris.target, test_size=0.3)
+print("the train data set of indicator variables is:", iris_train)
+print("the test data set of indicator variables is:", iristarget_train)
+print("the train data set of target feature/ variable is", iris_test)
+print("the test data set of target feature/ variable is", iristarget_test)
+
+
+
+#evaluate performance metrics (accuracy for the particular question)
+print("Accuracy", round(metrics.accuracy_score(iristarget_test, dtpred)*100, 2), "%")
+
+#confusion matrix just for a confirmation
+print(metrics.confusion_matrix(iristarget_test, dtpred))
+
+
+
+#Visualize the decision tree
+from IPython.display import Image  
+import pydotplus
+
+
+
+
+dt_data=tree.export_graphviz(dtmodel, out_file=None, feature_names=iris.feature_names, class_names=iris.target_names)
+graph=pydotplus.graph_from_dot_data(dt_data)
+Image(graph.create_png())
+
+
+
+
+#PART B
+#train using KNN
+knnmodel=KNeighborsClassifier(n_neighbors=4)
+knnfit=knnmodel.fit(iris_train, iristarget_train)
+
+
+
+#test the knn model
+knnpred=knnfit.predict(iris_test)
+
+
+
+#Evaluate performance of model
+#not using round in this case since I do not want to round off
+print("Accuracy:", (metrics.accuracy_score(iristarget_test, knnpred))*100, "%")
+print("Confusion Matrix:", metrics.confusion_matrix(iristarget_test, knnpred))
+print("Error Rate:", 100- round(metrics.accuracy_score(iristarget_test, knnpred), 2)*100, "%")
+
+
+
+#Evaluating K values v/s Error Rate:
+k_values=list(range(1,50,1))
+cv_score=[]#empty list to hold the cross validation score
+for k in k_values:
+    knn_eval=KNeighborsClassifier(n_neighbors=k)
+    score=cross_val_score(knn_eval, iris_train, iristarget_train, cv=10, scoring='accuracy')
+    cv_score.append(score.mean())
+
+
+
+#plotting K Values and determining best K
+mse=[1-x for x in cv_score]#mean square error
+optimal_k=k_values[mse.index(min(mse))]
+print("The optimal number of neighbours is",optimal_k)
+plt.plot(k_values, mse)
+plt.xlabel("Number of K Neighbors")
+plt.ylabel("Misclassification Error")
+plt.show()
